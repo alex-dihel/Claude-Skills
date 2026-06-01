@@ -1,6 +1,6 @@
 ---
 name: critical-thinking
-description: Applies the FORCE anti-sycophancy framework to evaluate any artifact, decision, or proposal. Surfaces real flaws and proposes solutions in a structured bullet format. Based on the FORCE framework addressing AI sycophancy, referencing Stanford research (2400+ participants, 11 models) published in Science. Framework source: https://www.youtube.com/watch?v=F4GmBmUJuGI
+description: "Applies the FORCE anti-sycophancy framework to evaluate any artifact, decision, or proposal. Surfaces real flaws and proposes solutions in a structured bullet format. Based on the FORCE framework addressing AI sycophancy, referencing Stanford research (2400+ participants, 11 models) published in Science. Framework source: https://www.youtube.com/watch?v=F4GmBmUJuGI"
 ---
 
 ## Intended Use
