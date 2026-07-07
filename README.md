@@ -11,6 +11,7 @@ Each skill is a structured prompt that instructs Claude to perform a specific ta
 | Skill | Description |
 |---|---|
 | [critical-thinking](./critical-thinking/) | Applies the FORCE anti-sycophancy framework to evaluate proposals, decisions, and artifacts. Surfaces real flaws, assigns severity, and delivers a clear verdict. |
+| [type-scale-generator](./type-scale-generator/) | Generates a brand-new typography type scale for a design system, from an HTML preview through real Figma variables, text styles, and a specimen frame. |
 
 ---
 
