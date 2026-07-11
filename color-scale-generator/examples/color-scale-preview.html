@@ -1,0 +1,1845 @@
+<meta charset="utf-8">
+<title>Color Scale Preview - ColorScale</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #111; --card-bg: #f5f5f5; --border-color: #ddd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111; --fg: #eee; --card-bg: #1c1c1c; --border-color: #333; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin:0; padding: 24px; background: var(--bg); color: var(--fg); }
+  h1 { font-size: 22px; }
+  h2.mode-title { font-size: 20px; letter-spacing: 0.05em; margin-top: 0; }
+  h3 { font-size: 15px; margin-top: 28px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+  .section-note { font-weight: normal; font-size: 12px; opacity: 0.7; }
+  .notes { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 13px; line-height: 1.6; }
+  .notes ul { margin: 6px 0; padding-left: 20px; }
+  .mode-container { border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+  .mode-container.light { background: #ffffff; color: #111; }
+  .mode-container.dark { background: #0a0a0a; color: #eee; }
+  .palette-block { display: flex; flex-direction: column; gap: 10px; }
+  .palette-row-label { font-size: 12px; font-weight: 600; text-transform: capitalize; margin-bottom: 4px; opacity: 0.8; }
+  .swatch-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch { display: flex; align-items: center; gap: 8px; width: 118px; padding: 6px; border: 1px solid var(--border-color); border-radius: 6px; }
+  .swatch-color { width: 28px; height: 28px; border-radius: 5px; flex-shrink: 0; border: 1px solid rgba(128,128,128,0.3); }
+  .swatch-label { display: flex; flex-direction: column; line-height: 1.25; overflow: hidden; }
+  .swatch-name { font-size: 11px; font-weight: 600; text-transform: capitalize; }
+  .swatch-sub { font-size: 9px; opacity: 0.65; font-family: monospace; white-space: nowrap; }
+  .surface-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+  .surface-pair { border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; }
+  .surface-pair-label { font-size: 12px; font-weight: 600; margin-bottom: 6px; text-transform: capitalize; }
+  .content-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .content-sample { width: 168px; }
+  .content-sample-box { height: 64px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border: 1px solid rgba(128,128,128,0.25); }
+  .content-sample-meta { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; align-items: flex-start; }
+  .content-sample-name { font-size: 11px; font-weight: 600; text-transform: capitalize; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+  .badge.pass { background: #16a34a; color: white; }
+  .badge.fail { background: #dc2626; color: white; }
+  .badge.exempt { background: #6b7280; color: white; }
+  .badge.info { background: #64748b; color: white; }
+  .border-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .border-sample { width: 140px; }
+  .border-sample-box { height: 44px; border-radius: 6px; }
+  .border-sample-meta { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+  .button-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .demo-button { border: none; border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: default; font-family: inherit; }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+  .detail-table th, .detail-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+  .detail-table .ref-cell { font-family: monospace; font-size: 10px; opacity: 0.8; }
+  .hex-chip { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(128,128,128,0.4); }
+  .status-pass { color: #16a34a; font-weight: 700; }
+  .status-fail { color: #dc2626; font-weight: 700; }
+  .status-exempt, .status-info { color: #6b7280; font-weight: 700; }
+  .table-scroll { overflow-x: auto; }
+</style>
+
+<h1>Color Scale Preview</h1>
+<div class="notes">
+  <strong>Setup:</strong> 3-tier structure (Brand &rarr; Alias &rarr; Mapped). Brand roles: primary = emerald/500, secondary = violet/500. System roles: error = rose/500, warning = amber/500, success = lime/500, information = sky/500, neutral = slate/500.
+  <br><strong>Figma target:</strong> adds new <code>Color/...</code> and <code>Opacity/...</code> groups into the existing <code>Brand</code> collection (alongside <code>Type/...</code> and <code>Scale/...</code>); creates new <code>Alias</code> (single mode) and <code>Mapped</code> (Light/Dark modes) collections.
+  <br><strong>Updated since last preview:</strong> surfaces are now solid-fill only &mdash; the tinted surface concept has been replaced by a component-level <code>Brand/Opacity</code> utility scale (5-100%, illustrative only, not a persisted color token). Removing the tinted-surface contrast test also removed the two step-900 escalations from the previous preview (<code>text-error</code> and <code>text-action-hover</code>) &mdash; everything now resolves cleanly within the standard 6-step Alias scale, plus two explicitly-named structural extremes (<code>Alias/neutral/extreme-light</code> = slate-50, <code>Alias/neutral/extreme-dark</code> = slate-950) used for <code>surface/page</code> (light/dark mirror) and <code>text/on-action</code>.
+  <ul>
+    <li>Every Mapped token below references an Alias entry &mdash; no token needs to bind straight to Brand (no <code>&rarr; Brand direct</code> cases in this build).</li>
+    <li><code>disabled</code> text/icon are shown as informational only &mdash; WCAG 1.4.3 exempts inactive UI components from contrast requirements.</li>
+    <li><code>surface/action</code> and <code>surface/primary</code> both resolve to <code>Alias/primary/default</code> (same value, separate token names per the standard system-role-set rule).</li>
+  </ul>
+</div>
+
+
+    <section class="mode-container light">
+      <h2 class="mode-title">LIGHT MODE</h2>
+
+      <h3>1. Raw Brand palettes</h3>
+      <div class="palette-block"><div class="palette-row"><div class="palette-row-label">primary &middot; emerald</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#ECFDF5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#D0FAE5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A4F4CF"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5EE9B5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00D294"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#009669"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#007857"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005F46"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#004E3B"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#002C22"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">secondary &middot; violet</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F5F3FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#EDE9FE"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DDD6FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C4B4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A686FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8D56FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7F22FE"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7008E7"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5D0EC0"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4D179A"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#2F0D68"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">error &middot; rose</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFF1F2"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFE4E6"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFCCD3"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFA3AE"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF6880"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E60045"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C1003A"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A30037"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8B0836"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4D0218"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">warning &middot; amber</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFFBEB"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FEF3C6"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FEE685"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFD237"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FABC00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DA7700"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B55200"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#953D00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7B3306"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#461901"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">success &middot; lime</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F7FEE7"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#ECFCCA"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#D8F999"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#BBF451"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#9DE500"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#64A300"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4B7C00"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#3D6300"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#35530E"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#192E03"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">information &middot; sky</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F0F9FF"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DFF2FE"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B8E6FE"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#78D4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00BBFD"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0084C7"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0069A2"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005986"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#024A70"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#052F4A"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">neutral &middot; slate</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F8FAFC"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F1F5F9"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E2E8F0"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#CAD5E2"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#90A1B9"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#62748E"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#45556C"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#314158"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#1D293D"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0F172B"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#020618"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 950</span></div>
+    </div></div></div></div>
+
+      <h3>2. Alias &mdash; 6-step semantic scale <span class="section-note">(+ neutral structural extremes)</span></h3>
+      <div class="palette-block"><div class="palette-row"><div class="palette-row-label">primary</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#D0FAE5"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">emerald 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5EE9B5"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">emerald 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">emerald 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#009669"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">emerald 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#007857"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">emerald 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005F46"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">emerald 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">secondary</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#EDE9FE"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">violet 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C4B4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">violet 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8D56FF"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">violet 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7F22FE"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">violet 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7008E7"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">violet 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5D0EC0"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">violet 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">error</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFE4E6"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">rose 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFA3AE"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">rose 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">rose 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E60045"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">rose 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C1003A"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">rose 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A30037"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">rose 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">warning</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FEF3C6"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">amber 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFD237"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">amber 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">amber 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DA7700"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">amber 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B55200"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">amber 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#953D00"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">amber 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">success</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#ECFCCA"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">lime 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#BBF451"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">lime 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">lime 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#64A300"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">lime 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4B7C00"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">lime 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#3D6300"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">lime 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">information</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#DFF2FE"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">sky 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#78D4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">sky 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">sky 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0084C7"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">sky 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0069A2"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">sky 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005986"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">sky 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">neutral</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F1F5F9"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">slate 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#CAD5E2"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">slate 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#62748E"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">slate 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#45556C"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">slate 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#314158"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">slate 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#1D293D"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">slate 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F8FAFC"></div>
+      <div class="swatch-label"><span class="swatch-name">extreme-light</span><span class="swatch-sub">slate 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#020618"></div>
+      <div class="swatch-label"><span class="swatch-name">extreme-dark</span><span class="swatch-sub">slate 950</span></div>
+    </div></div></div></div>
+
+      <h3>2b. Opacity scale <span class="section-note">(illustrative reference only &mdash; not a color token; shown here composited with primary over page)</span></h3>
+      <div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#ECF7F6"></div>
+      <div class="swatch-label"><span class="swatch-name">5%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DFF3F0"></div>
+      <div class="swatch-label"><span class="swatch-name">10%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#D3F0EA"></div>
+      <div class="swatch-label"><span class="swatch-name">15%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C6EDE3"></div>
+      <div class="swatch-label"><span class="swatch-name">20%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#AEE6D7"></div>
+      <div class="swatch-label"><span class="swatch-name">30%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#95E0CB"></div>
+      <div class="swatch-label"><span class="swatch-name">40%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7CDABE"></div>
+      <div class="swatch-label"><span class="swatch-name">50%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#63D3B2"></div>
+      <div class="swatch-label"><span class="swatch-name">60%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4ACCA6"></div>
+      <div class="swatch-label"><span class="swatch-name">70%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#32C69A"></div>
+      <div class="swatch-label"><span class="swatch-name">80%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#19C08D"></div>
+      <div class="swatch-label"><span class="swatch-name">90%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">100%</span><span class="swatch-sub">illustrative</span></div>
+    </div></div>
+
+      <h3>3. Mapped &mdash; Surface <span class="section-note">(solid fill only, one value per role)</span></h3>
+      <div class="surface-grid"><div class="surface-pair"><div class="surface-pair-label">page</div><div class="swatch">
+      <div class="swatch-color" style="background:#F8FAFC"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#F8FAFC</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">primary</div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00B981</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">action</div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00B981</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">success</div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#83CC00</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">warning</div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#F69E00</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">error</div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#FF2357</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">information</div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00A5EA</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">disabled</div><div class="swatch">
+      <div class="swatch-color" style="background:#F1F5F9"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#F1F5F9</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">disabled-selected</div><div class="swatch">
+      <div class="swatch-color" style="background:#CAD5E2"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#CAD5E2</span></div>
+    </div></div></div>
+
+      <h3>3b. Illustrative opacity examples <span class="section-note">(NOT persisted tokens &mdash; computed live for preview using the Opacity scale)</span></h3>
+      <div class="content-grid"><div class="content-sample">
+          <div class="content-sample-box" style="background:#C6EDE3; border:2px solid #00B981"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">primary @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#C6EDE3; border:2px solid #00B981"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">action @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#E1F1CA; border:2px solid #83CC00"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">success @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#F8E8CA; border:2px solid #F69E00"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">warning @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#F9CFDB; border:2px solid #FF2357"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">error @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#C6E9F8; border:2px solid #00A5EA"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">information @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#F7F9FB; border:2px solid #F1F5F9"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">disabled @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#EFF3F7; border:2px solid #CAD5E2"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">disabled-selected @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div></div>
+
+      <h3>4. Mapped &mdash; Text</h3>
+      <div class="content-grid"><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#1D293D">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">headings</span>
+                <span class="badge pass">PASS 13.97:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#314158">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">body</span>
+                <span class="badge pass">PASS 9.90:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#007857">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action</span>
+                <span class="badge pass">PASS 5.25:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#005F46">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action-hover</span>
+                <span class="badge pass">PASS 7.36:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#CAD5E2">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">disabled</span>
+                <span class="badge exempt">EXEMPT (WCAG 1.4.3)</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#0069A2">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">information</span>
+                <span class="badge pass">PASS 5.67:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#4B7C00">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">success</span>
+                <span class="badge pass">PASS 4.80:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#C1003A">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">error</span>
+                <span class="badge pass">PASS 6.03:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#B55200">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">warning</span>
+                <span class="badge pass">PASS 4.81:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#00B981; color:#020618">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-action</span>
+                <span class="badge pass">PASS 7.93:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F1F5F9; color:#1D293D">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-disabled</span>
+                <span class="badge pass">PASS 13.34:1</span>
+              </div>
+            </div></div>
+
+      <h3>5. Mapped &mdash; Icon</h3>
+      <div class="content-grid"><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#1D293D"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">headings</span>
+                <span class="badge pass">PASS 13.97:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#314158"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">body</span>
+                <span class="badge pass">PASS 9.90:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#007857"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action</span>
+                <span class="badge pass">PASS 5.25:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#005F46"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action-hover</span>
+                <span class="badge pass">PASS 7.36:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#CAD5E2"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">disabled</span>
+                <span class="badge exempt">EXEMPT (WCAG 1.4.3)</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#0069A2"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">information</span>
+                <span class="badge pass">PASS 5.67:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#4B7C00"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">success</span>
+                <span class="badge pass">PASS 4.80:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#C1003A"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">error</span>
+                <span class="badge pass">PASS 6.03:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F8FAFC; color:#B55200"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">warning</span>
+                <span class="badge pass">PASS 4.81:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#00B981; color:#020618"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-action</span>
+                <span class="badge pass">PASS 7.93:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#F1F5F9; color:#1D293D"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-disabled</span>
+                <span class="badge pass">PASS 13.34:1</span>
+              </div>
+            </div></div>
+
+      <h3>6. Mapped &mdash; Border <span class="section-note">(informational only &mdash; never gated)</span></h3>
+      <div class="border-grid"><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #CAD5E2; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">default</span><span class="badge info">1.42:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #009669; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">focus</span><span class="badge info">3.61:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #00B981; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">action</span><span class="badge info">2.43:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #83CC00; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">success</span><span class="badge info">1.89:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #F69E00; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">warning</span><span class="badge info">2.05:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #FF2357; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">error</span><span class="badge info">3.57:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #00A5EA; background:#F8FAFC"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">information</span><span class="badge info">2.65:1 (info)</span></div>
+        </div></div>
+
+      <h3>7. Sample components</h3>
+      <div class="button-grid"><button class="demo-button" style="background:#00B981; color:#020618">primary button (solid)</button><button class="demo-button" style="background:#00B981; color:#020618">action button (solid)</button><button class="demo-button illustrative" style="background:#E1F1CA; border:2px solid #83CC00; color:#4B7C00">success button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#F8E8CA; border:2px solid #F69E00; color:#B55200">warning button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#F9CFDB; border:2px solid #FF2357; color:#C1003A">error button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#C6E9F8; border:2px solid #00A5EA; color:#0069A2">information button (illustrative @20%)</button></div>
+    </section>
+    
+
+    <section class="mode-container dark">
+      <h2 class="mode-title">DARK MODE</h2>
+
+      <h3>1. Raw Brand palettes</h3>
+      <div class="palette-block"><div class="palette-row"><div class="palette-row-label">primary &middot; emerald</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#ECFDF5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#D0FAE5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A4F4CF"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5EE9B5"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00D294"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#009669"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#007857"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005F46"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#004E3B"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#002C22"></div>
+      <div class="swatch-label"><span class="swatch-name">emerald 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">secondary &middot; violet</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F5F3FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#EDE9FE"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DDD6FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C4B4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A686FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8D56FF"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7F22FE"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7008E7"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5D0EC0"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4D179A"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#2F0D68"></div>
+      <div class="swatch-label"><span class="swatch-name">violet 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">error &middot; rose</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFF1F2"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFE4E6"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFCCD3"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFA3AE"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF6880"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E60045"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C1003A"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A30037"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8B0836"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4D0218"></div>
+      <div class="swatch-label"><span class="swatch-name">rose 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">warning &middot; amber</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFFBEB"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FEF3C6"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FEE685"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFD237"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FABC00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DA7700"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B55200"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#953D00"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7B3306"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#461901"></div>
+      <div class="swatch-label"><span class="swatch-name">amber 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">success &middot; lime</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F7FEE7"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#ECFCCA"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#D8F999"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#BBF451"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#9DE500"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#64A300"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4B7C00"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#3D6300"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#35530E"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#192E03"></div>
+      <div class="swatch-label"><span class="swatch-name">lime 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">information &middot; sky</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F0F9FF"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DFF2FE"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B8E6FE"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#78D4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00BBFD"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0084C7"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0069A2"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005986"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#024A70"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#052F4A"></div>
+      <div class="swatch-label"><span class="swatch-name">sky 950</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">neutral &middot; slate</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F8FAFC"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F1F5F9"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E2E8F0"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 200</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#CAD5E2"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#90A1B9"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 400</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#62748E"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#45556C"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#314158"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#1D293D"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0F172B"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 900</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#020618"></div>
+      <div class="swatch-label"><span class="swatch-name">slate 950</span></div>
+    </div></div></div></div>
+
+      <h3>2. Alias &mdash; 6-step semantic scale <span class="section-note">(+ neutral structural extremes)</span></h3>
+      <div class="palette-block"><div class="palette-row"><div class="palette-row-label">primary</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#D0FAE5"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">emerald 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5EE9B5"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">emerald 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">emerald 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#009669"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">emerald 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#007857"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">emerald 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005F46"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">emerald 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">secondary</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#EDE9FE"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">violet 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C4B4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">violet 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#8D56FF"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">violet 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7F22FE"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">violet 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#7008E7"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">violet 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#5D0EC0"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">violet 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">error</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FFE4E6"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">rose 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFA3AE"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">rose 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">rose 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#E60045"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">rose 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#C1003A"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">rose 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#A30037"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">rose 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">warning</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#FEF3C6"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">amber 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#FFD237"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">amber 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">amber 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#DA7700"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">amber 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#B55200"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">amber 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#953D00"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">amber 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">success</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#ECFCCA"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">lime 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#BBF451"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">lime 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">lime 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#64A300"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">lime 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#4B7C00"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">lime 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#3D6300"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">lime 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">information</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#DFF2FE"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">sky 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#78D4FF"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">sky 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">sky 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0084C7"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">sky 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#0069A2"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">sky 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#005986"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">sky 800</span></div>
+    </div></div></div><div class="palette-row"><div class="palette-row-label">neutral</div><div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#F1F5F9"></div>
+      <div class="swatch-label"><span class="swatch-name">subtle</span><span class="swatch-sub">slate 100</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#CAD5E2"></div>
+      <div class="swatch-label"><span class="swatch-name">muted</span><span class="swatch-sub">slate 300</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#62748E"></div>
+      <div class="swatch-label"><span class="swatch-name">default</span><span class="swatch-sub">slate 500</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#45556C"></div>
+      <div class="swatch-label"><span class="swatch-name">hover</span><span class="swatch-sub">slate 600</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#314158"></div>
+      <div class="swatch-label"><span class="swatch-name">strong</span><span class="swatch-sub">slate 700</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#1D293D"></div>
+      <div class="swatch-label"><span class="swatch-name">active</span><span class="swatch-sub">slate 800</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#F8FAFC"></div>
+      <div class="swatch-label"><span class="swatch-name">extreme-light</span><span class="swatch-sub">slate 50</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#020618"></div>
+      <div class="swatch-label"><span class="swatch-name">extreme-dark</span><span class="swatch-sub">slate 950</span></div>
+    </div></div></div></div>
+
+      <h3>2b. Opacity scale <span class="section-note">(illustrative reference only &mdash; not a color token; shown here composited with primary over page)</span></h3>
+      <div class="swatch-row"><div class="swatch">
+      <div class="swatch-color" style="background:#020F1D"></div>
+      <div class="swatch-label"><span class="swatch-name">5%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#021822"></div>
+      <div class="swatch-label"><span class="swatch-name">10%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#022128"></div>
+      <div class="swatch-label"><span class="swatch-name">15%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#022A2D"></div>
+      <div class="swatch-label"><span class="swatch-name">20%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#013C38"></div>
+      <div class="swatch-label"><span class="swatch-name">30%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#014E42"></div>
+      <div class="swatch-label"><span class="swatch-name">40%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#01604C"></div>
+      <div class="swatch-label"><span class="swatch-name">50%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#017157"></div>
+      <div class="swatch-label"><span class="swatch-name">60%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#018362"></div>
+      <div class="swatch-label"><span class="swatch-name">70%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00956C"></div>
+      <div class="swatch-label"><span class="swatch-name">80%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00A776"></div>
+      <div class="swatch-label"><span class="swatch-name">90%</span><span class="swatch-sub">illustrative</span></div>
+    </div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">100%</span><span class="swatch-sub">illustrative</span></div>
+    </div></div>
+
+      <h3>3. Mapped &mdash; Surface <span class="section-note">(solid fill only, one value per role)</span></h3>
+      <div class="surface-grid"><div class="surface-pair"><div class="surface-pair-label">page</div><div class="swatch">
+      <div class="swatch-color" style="background:#020618"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#020618</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">primary</div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00B981</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">action</div><div class="swatch">
+      <div class="swatch-color" style="background:#00B981"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00B981</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">success</div><div class="swatch">
+      <div class="swatch-color" style="background:#83CC00"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#83CC00</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">warning</div><div class="swatch">
+      <div class="swatch-color" style="background:#F69E00"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#F69E00</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">error</div><div class="swatch">
+      <div class="swatch-color" style="background:#FF2357"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#FF2357</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">information</div><div class="swatch">
+      <div class="swatch-color" style="background:#00A5EA"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#00A5EA</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">disabled</div><div class="swatch">
+      <div class="swatch-color" style="background:#1D293D"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#1D293D</span></div>
+    </div></div><div class="surface-pair"><div class="surface-pair-label">disabled-selected</div><div class="swatch">
+      <div class="swatch-color" style="background:#314158"></div>
+      <div class="swatch-label"><span class="swatch-name">solid</span><span class="swatch-sub">#314158</span></div>
+    </div></div></div>
+
+      <h3>3b. Illustrative opacity examples <span class="section-note">(NOT persisted tokens &mdash; computed live for preview using the Opacity scale)</span></h3>
+      <div class="content-grid"><div class="content-sample">
+          <div class="content-sample-box" style="background:#022A2D; border:2px solid #00B981"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">primary @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#022A2D; border:2px solid #00B981"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">action @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#1C2E13; border:2px solid #83CC00"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">success @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#332413; border:2px solid #F69E00"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">warning @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#350C25; border:2px solid #FF2357"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">error @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#022642; border:2px solid #00A5EA"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">information @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#070D1F; border:2px solid #1D293D"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">disabled @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div><div class="content-sample">
+          <div class="content-sample-box" style="background:#0B1225; border:2px solid #314158"></div>
+          <div class="content-sample-meta"><span class="content-sample-name">disabled-selected @ 20% opacity</span><span class="badge info">illustrative only</span></div>
+        </div></div>
+
+      <h3>4. Mapped &mdash; Text</h3>
+      <div class="content-grid"><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#F1F5F9">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">headings</span>
+                <span class="badge pass">PASS 18.40:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#CAD5E2">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">body</span>
+                <span class="badge pass">PASS 13.56:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#5EE9B5">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action</span>
+                <span class="badge pass">PASS 13.24:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#D0FAE5">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action-hover</span>
+                <span class="badge pass">PASS 17.75:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#45556C">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">disabled</span>
+                <span class="badge exempt">EXEMPT (WCAG 1.4.3)</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#78D4FF">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">information</span>
+                <span class="badge pass">PASS 12.15:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#BBF451">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">success</span>
+                <span class="badge pass">PASS 15.52:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#FFA3AE">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">error</span>
+                <span class="badge pass">PASS 10.66:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#FFD237">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">warning</span>
+                <span class="badge pass">PASS 13.94:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#00B981; color:#020618">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-action</span>
+                <span class="badge pass">PASS 7.93:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#1D293D; color:#F1F5F9">Sample text</div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-disabled</span>
+                <span class="badge pass">PASS 13.34:1</span>
+              </div>
+            </div></div>
+
+      <h3>5. Mapped &mdash; Icon</h3>
+      <div class="content-grid"><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#F1F5F9"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">headings</span>
+                <span class="badge pass">PASS 18.40:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#CAD5E2"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">body</span>
+                <span class="badge pass">PASS 13.56:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#5EE9B5"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action</span>
+                <span class="badge pass">PASS 13.24:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#D0FAE5"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">action-hover</span>
+                <span class="badge pass">PASS 17.75:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#45556C"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">disabled</span>
+                <span class="badge exempt">EXEMPT (WCAG 1.4.3)</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#78D4FF"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">information</span>
+                <span class="badge pass">PASS 12.15:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#BBF451"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">success</span>
+                <span class="badge pass">PASS 15.52:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#FFA3AE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">error</span>
+                <span class="badge pass">PASS 10.66:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#020618; color:#FFD237"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">warning</span>
+                <span class="badge pass">PASS 13.94:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#00B981; color:#020618"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-action</span>
+                <span class="badge pass">PASS 7.93:1</span>
+              </div>
+            </div><div class="content-sample">
+              <div class="content-sample-box" style="background:#1D293D; color:#F1F5F9"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/></svg></div>
+              <div class="content-sample-meta">
+                <span class="content-sample-name">on-disabled</span>
+                <span class="badge pass">PASS 13.34:1</span>
+              </div>
+            </div></div>
+
+      <h3>6. Mapped &mdash; Border <span class="section-note">(informational only &mdash; never gated)</span></h3>
+      <div class="border-grid"><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #45556C; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">default</span><span class="badge info">2.66:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #5EE9B5; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">focus</span><span class="badge info">13.24:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #00B981; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">action</span><span class="badge info">7.93:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #83CC00; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">success</span><span class="badge info">10.18:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #F69E00; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">warning</span><span class="badge info">9.42:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #FF2357; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">error</span><span class="badge info">5.40:1 (info)</span></div>
+        </div><div class="border-sample">
+          <div class="border-sample-box" style="border:1px solid #00A5EA; background:#020618"></div>
+          <div class="border-sample-meta"><span class="content-sample-name">information</span><span class="badge info">7.27:1 (info)</span></div>
+        </div></div>
+
+      <h3>7. Sample components</h3>
+      <div class="button-grid"><button class="demo-button" style="background:#00B981; color:#020618">primary button (solid)</button><button class="demo-button" style="background:#00B981; color:#020618">action button (solid)</button><button class="demo-button illustrative" style="background:#1C2E13; border:2px solid #83CC00; color:#BBF451">success button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#332413; border:2px solid #F69E00; color:#FFD237">warning button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#350C25; border:2px solid #FF2357; color:#FFA3AE">error button (illustrative @20%)</button><button class="demo-button illustrative" style="background:#022642; border:2px solid #00A5EA; color:#78D4FF">information button (illustrative @20%)</button></div>
+    </section>
+    
+
+<h3>Full detail table</h3>
+<div class="table-scroll"><table class="detail-table">
+      <thead><tr>
+        <th rowspan="2">Token (full path)</th>
+        <th colspan="4">Light</th>
+        <th colspan="4">Dark</th>
+      </tr>
+      <tr>
+        <th>Reference</th><th>Value</th><th>Contrast</th><th>Status</th>
+        <th>Reference</th><th>Value</th><th>Contrast</th><th>Status</th>
+      </tr></thead>
+      <tbody><tr>
+          <td>Mapped &gt; Text &gt; headings</td>
+          <td class="ref-cell">Alias/neutral/active</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>13.97:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/subtle</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>18.40:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; body</td>
+          <td class="ref-cell">Alias/neutral/strong</td>
+          <td><span class="hex-chip" style="background:#314158"></span>#314158</td><td>9.90:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>13.56:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; action</td>
+          <td class="ref-cell">Alias/primary/strong</td>
+          <td><span class="hex-chip" style="background:#007857"></span>#007857</td><td>5.25:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/primary/muted</td>
+          <td><span class="hex-chip" style="background:#5EE9B5"></span>#5EE9B5</td><td>13.24:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; action-hover</td>
+          <td class="ref-cell">Alias/primary/active</td>
+          <td><span class="hex-chip" style="background:#005F46"></span>#005F46</td><td>7.36:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/primary/subtle</td>
+          <td><span class="hex-chip" style="background:#D0FAE5"></span>#D0FAE5</td><td>17.75:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; disabled</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>1.42:1</td><td class="status-exempt">EXEMPT</td>
+          <td class="ref-cell">Alias/neutral/hover</td>
+          <td><span class="hex-chip" style="background:#45556C"></span>#45556C</td><td>2.66:1</td><td class="status-exempt">EXEMPT</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; information</td>
+          <td class="ref-cell">Alias/information/strong</td>
+          <td><span class="hex-chip" style="background:#0069A2"></span>#0069A2</td><td>5.67:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/information/muted</td>
+          <td><span class="hex-chip" style="background:#78D4FF"></span>#78D4FF</td><td>12.15:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; success</td>
+          <td class="ref-cell">Alias/success/strong</td>
+          <td><span class="hex-chip" style="background:#4B7C00"></span>#4B7C00</td><td>4.80:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/success/muted</td>
+          <td><span class="hex-chip" style="background:#BBF451"></span>#BBF451</td><td>15.52:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; error</td>
+          <td class="ref-cell">Alias/error/strong</td>
+          <td><span class="hex-chip" style="background:#C1003A"></span>#C1003A</td><td>6.03:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/error/muted</td>
+          <td><span class="hex-chip" style="background:#FFA3AE"></span>#FFA3AE</td><td>10.66:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; warning</td>
+          <td class="ref-cell">Alias/warning/strong</td>
+          <td><span class="hex-chip" style="background:#B55200"></span>#B55200</td><td>4.81:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/warning/muted</td>
+          <td><span class="hex-chip" style="background:#FFD237"></span>#FFD237</td><td>13.94:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; on-action</td>
+          <td class="ref-cell">Alias/neutral/extreme-dark</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>7.93:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/extreme-dark</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>7.93:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Text &gt; on-disabled</td>
+          <td class="ref-cell">Alias/neutral/active</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>13.34:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/subtle</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>13.34:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; headings</td>
+          <td class="ref-cell">Alias/neutral/active</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>13.97:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/subtle</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>18.40:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; body</td>
+          <td class="ref-cell">Alias/neutral/strong</td>
+          <td><span class="hex-chip" style="background:#314158"></span>#314158</td><td>9.90:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>13.56:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; action</td>
+          <td class="ref-cell">Alias/primary/strong</td>
+          <td><span class="hex-chip" style="background:#007857"></span>#007857</td><td>5.25:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/primary/muted</td>
+          <td><span class="hex-chip" style="background:#5EE9B5"></span>#5EE9B5</td><td>13.24:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; action-hover</td>
+          <td class="ref-cell">Alias/primary/active</td>
+          <td><span class="hex-chip" style="background:#005F46"></span>#005F46</td><td>7.36:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/primary/subtle</td>
+          <td><span class="hex-chip" style="background:#D0FAE5"></span>#D0FAE5</td><td>17.75:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; disabled</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>1.42:1</td><td class="status-exempt">EXEMPT</td>
+          <td class="ref-cell">Alias/neutral/hover</td>
+          <td><span class="hex-chip" style="background:#45556C"></span>#45556C</td><td>2.66:1</td><td class="status-exempt">EXEMPT</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; information</td>
+          <td class="ref-cell">Alias/information/strong</td>
+          <td><span class="hex-chip" style="background:#0069A2"></span>#0069A2</td><td>5.67:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/information/muted</td>
+          <td><span class="hex-chip" style="background:#78D4FF"></span>#78D4FF</td><td>12.15:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; success</td>
+          <td class="ref-cell">Alias/success/strong</td>
+          <td><span class="hex-chip" style="background:#4B7C00"></span>#4B7C00</td><td>4.80:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/success/muted</td>
+          <td><span class="hex-chip" style="background:#BBF451"></span>#BBF451</td><td>15.52:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; error</td>
+          <td class="ref-cell">Alias/error/strong</td>
+          <td><span class="hex-chip" style="background:#C1003A"></span>#C1003A</td><td>6.03:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/error/muted</td>
+          <td><span class="hex-chip" style="background:#FFA3AE"></span>#FFA3AE</td><td>10.66:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; warning</td>
+          <td class="ref-cell">Alias/warning/strong</td>
+          <td><span class="hex-chip" style="background:#B55200"></span>#B55200</td><td>4.81:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/warning/muted</td>
+          <td><span class="hex-chip" style="background:#FFD237"></span>#FFD237</td><td>13.94:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; on-action</td>
+          <td class="ref-cell">Alias/neutral/extreme-dark</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>7.93:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/extreme-dark</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>7.93:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Icon &gt; on-disabled</td>
+          <td class="ref-cell">Alias/neutral/active</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>13.34:1</td><td class="status-pass">PASS</td>
+          <td class="ref-cell">Alias/neutral/subtle</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>13.34:1</td><td class="status-pass">PASS</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; page</td>
+          <td class="ref-cell">Alias/neutral/extreme-light</td>
+          <td><span class="hex-chip" style="background:#F8FAFC"></span>#F8FAFC</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/neutral/extreme-dark</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; primary</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; action</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; success</td>
+          <td class="ref-cell">Alias/success/default</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/success/default</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; warning</td>
+          <td class="ref-cell">Alias/warning/default</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/warning/default</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; error</td>
+          <td class="ref-cell">Alias/error/default</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/error/default</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; information</td>
+          <td class="ref-cell">Alias/information/default</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/information/default</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; disabled</td>
+          <td class="ref-cell">Alias/neutral/subtle</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/neutral/active</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Surface &gt; disabled-selected</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/neutral/strong</td>
+          <td><span class="hex-chip" style="background:#314158"></span>#314158</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; default</td>
+          <td class="ref-cell">Alias/neutral/muted</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>1.42:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/neutral/hover</td>
+          <td><span class="hex-chip" style="background:#45556C"></span>#45556C</td><td>2.66:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; focus</td>
+          <td class="ref-cell">Alias/primary/hover</td>
+          <td><span class="hex-chip" style="background:#009669"></span>#009669</td><td>3.61:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/primary/muted</td>
+          <td><span class="hex-chip" style="background:#5EE9B5"></span>#5EE9B5</td><td>13.24:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; action</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>2.43:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/primary/default</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>7.93:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; success</td>
+          <td class="ref-cell">Alias/success/default</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>1.89:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/success/default</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>10.18:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; warning</td>
+          <td class="ref-cell">Alias/warning/default</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>2.05:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/warning/default</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>9.42:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; error</td>
+          <td class="ref-cell">Alias/error/default</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>3.57:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/error/default</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>5.40:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Mapped &gt; Border &gt; information</td>
+          <td class="ref-cell">Alias/information/default</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>2.65:1</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Alias/information/default</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>7.27:1</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/emerald/100</td>
+          <td><span class="hex-chip" style="background:#D0FAE5"></span>#D0FAE5</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/100</td>
+          <td><span class="hex-chip" style="background:#D0FAE5"></span>#D0FAE5</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; muted</td>
+          <td class="ref-cell">Brand/Color/emerald/300</td>
+          <td><span class="hex-chip" style="background:#5EE9B5"></span>#5EE9B5</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/300</td>
+          <td><span class="hex-chip" style="background:#5EE9B5"></span>#5EE9B5</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; default</td>
+          <td class="ref-cell">Brand/Color/emerald/500</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/500</td>
+          <td><span class="hex-chip" style="background:#00B981"></span>#00B981</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; hover</td>
+          <td class="ref-cell">Brand/Color/emerald/600</td>
+          <td><span class="hex-chip" style="background:#009669"></span>#009669</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/600</td>
+          <td><span class="hex-chip" style="background:#009669"></span>#009669</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; strong</td>
+          <td class="ref-cell">Brand/Color/emerald/700</td>
+          <td><span class="hex-chip" style="background:#007857"></span>#007857</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/700</td>
+          <td><span class="hex-chip" style="background:#007857"></span>#007857</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; primary &gt; active</td>
+          <td class="ref-cell">Brand/Color/emerald/800</td>
+          <td><span class="hex-chip" style="background:#005F46"></span>#005F46</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/emerald/800</td>
+          <td><span class="hex-chip" style="background:#005F46"></span>#005F46</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/violet/100</td>
+          <td><span class="hex-chip" style="background:#EDE9FE"></span>#EDE9FE</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/100</td>
+          <td><span class="hex-chip" style="background:#EDE9FE"></span>#EDE9FE</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; muted</td>
+          <td class="ref-cell">Brand/Color/violet/300</td>
+          <td><span class="hex-chip" style="background:#C4B4FF"></span>#C4B4FF</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/300</td>
+          <td><span class="hex-chip" style="background:#C4B4FF"></span>#C4B4FF</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; default</td>
+          <td class="ref-cell">Brand/Color/violet/500</td>
+          <td><span class="hex-chip" style="background:#8D56FF"></span>#8D56FF</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/500</td>
+          <td><span class="hex-chip" style="background:#8D56FF"></span>#8D56FF</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; hover</td>
+          <td class="ref-cell">Brand/Color/violet/600</td>
+          <td><span class="hex-chip" style="background:#7F22FE"></span>#7F22FE</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/600</td>
+          <td><span class="hex-chip" style="background:#7F22FE"></span>#7F22FE</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; strong</td>
+          <td class="ref-cell">Brand/Color/violet/700</td>
+          <td><span class="hex-chip" style="background:#7008E7"></span>#7008E7</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/700</td>
+          <td><span class="hex-chip" style="background:#7008E7"></span>#7008E7</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; secondary &gt; active</td>
+          <td class="ref-cell">Brand/Color/violet/800</td>
+          <td><span class="hex-chip" style="background:#5D0EC0"></span>#5D0EC0</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/violet/800</td>
+          <td><span class="hex-chip" style="background:#5D0EC0"></span>#5D0EC0</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/rose/100</td>
+          <td><span class="hex-chip" style="background:#FFE4E6"></span>#FFE4E6</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/100</td>
+          <td><span class="hex-chip" style="background:#FFE4E6"></span>#FFE4E6</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; muted</td>
+          <td class="ref-cell">Brand/Color/rose/300</td>
+          <td><span class="hex-chip" style="background:#FFA3AE"></span>#FFA3AE</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/300</td>
+          <td><span class="hex-chip" style="background:#FFA3AE"></span>#FFA3AE</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; default</td>
+          <td class="ref-cell">Brand/Color/rose/500</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/500</td>
+          <td><span class="hex-chip" style="background:#FF2357"></span>#FF2357</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; hover</td>
+          <td class="ref-cell">Brand/Color/rose/600</td>
+          <td><span class="hex-chip" style="background:#E60045"></span>#E60045</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/600</td>
+          <td><span class="hex-chip" style="background:#E60045"></span>#E60045</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; strong</td>
+          <td class="ref-cell">Brand/Color/rose/700</td>
+          <td><span class="hex-chip" style="background:#C1003A"></span>#C1003A</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/700</td>
+          <td><span class="hex-chip" style="background:#C1003A"></span>#C1003A</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; error &gt; active</td>
+          <td class="ref-cell">Brand/Color/rose/800</td>
+          <td><span class="hex-chip" style="background:#A30037"></span>#A30037</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/rose/800</td>
+          <td><span class="hex-chip" style="background:#A30037"></span>#A30037</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/amber/100</td>
+          <td><span class="hex-chip" style="background:#FEF3C6"></span>#FEF3C6</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/100</td>
+          <td><span class="hex-chip" style="background:#FEF3C6"></span>#FEF3C6</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; muted</td>
+          <td class="ref-cell">Brand/Color/amber/300</td>
+          <td><span class="hex-chip" style="background:#FFD237"></span>#FFD237</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/300</td>
+          <td><span class="hex-chip" style="background:#FFD237"></span>#FFD237</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; default</td>
+          <td class="ref-cell">Brand/Color/amber/500</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/500</td>
+          <td><span class="hex-chip" style="background:#F69E00"></span>#F69E00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; hover</td>
+          <td class="ref-cell">Brand/Color/amber/600</td>
+          <td><span class="hex-chip" style="background:#DA7700"></span>#DA7700</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/600</td>
+          <td><span class="hex-chip" style="background:#DA7700"></span>#DA7700</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; strong</td>
+          <td class="ref-cell">Brand/Color/amber/700</td>
+          <td><span class="hex-chip" style="background:#B55200"></span>#B55200</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/700</td>
+          <td><span class="hex-chip" style="background:#B55200"></span>#B55200</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; warning &gt; active</td>
+          <td class="ref-cell">Brand/Color/amber/800</td>
+          <td><span class="hex-chip" style="background:#953D00"></span>#953D00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/amber/800</td>
+          <td><span class="hex-chip" style="background:#953D00"></span>#953D00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/lime/100</td>
+          <td><span class="hex-chip" style="background:#ECFCCA"></span>#ECFCCA</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/100</td>
+          <td><span class="hex-chip" style="background:#ECFCCA"></span>#ECFCCA</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; muted</td>
+          <td class="ref-cell">Brand/Color/lime/300</td>
+          <td><span class="hex-chip" style="background:#BBF451"></span>#BBF451</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/300</td>
+          <td><span class="hex-chip" style="background:#BBF451"></span>#BBF451</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; default</td>
+          <td class="ref-cell">Brand/Color/lime/500</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/500</td>
+          <td><span class="hex-chip" style="background:#83CC00"></span>#83CC00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; hover</td>
+          <td class="ref-cell">Brand/Color/lime/600</td>
+          <td><span class="hex-chip" style="background:#64A300"></span>#64A300</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/600</td>
+          <td><span class="hex-chip" style="background:#64A300"></span>#64A300</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; strong</td>
+          <td class="ref-cell">Brand/Color/lime/700</td>
+          <td><span class="hex-chip" style="background:#4B7C00"></span>#4B7C00</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/700</td>
+          <td><span class="hex-chip" style="background:#4B7C00"></span>#4B7C00</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; success &gt; active</td>
+          <td class="ref-cell">Brand/Color/lime/800</td>
+          <td><span class="hex-chip" style="background:#3D6300"></span>#3D6300</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/lime/800</td>
+          <td><span class="hex-chip" style="background:#3D6300"></span>#3D6300</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/sky/100</td>
+          <td><span class="hex-chip" style="background:#DFF2FE"></span>#DFF2FE</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/100</td>
+          <td><span class="hex-chip" style="background:#DFF2FE"></span>#DFF2FE</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; muted</td>
+          <td class="ref-cell">Brand/Color/sky/300</td>
+          <td><span class="hex-chip" style="background:#78D4FF"></span>#78D4FF</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/300</td>
+          <td><span class="hex-chip" style="background:#78D4FF"></span>#78D4FF</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; default</td>
+          <td class="ref-cell">Brand/Color/sky/500</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/500</td>
+          <td><span class="hex-chip" style="background:#00A5EA"></span>#00A5EA</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; hover</td>
+          <td class="ref-cell">Brand/Color/sky/600</td>
+          <td><span class="hex-chip" style="background:#0084C7"></span>#0084C7</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/600</td>
+          <td><span class="hex-chip" style="background:#0084C7"></span>#0084C7</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; strong</td>
+          <td class="ref-cell">Brand/Color/sky/700</td>
+          <td><span class="hex-chip" style="background:#0069A2"></span>#0069A2</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/700</td>
+          <td><span class="hex-chip" style="background:#0069A2"></span>#0069A2</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; information &gt; active</td>
+          <td class="ref-cell">Brand/Color/sky/800</td>
+          <td><span class="hex-chip" style="background:#005986"></span>#005986</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/sky/800</td>
+          <td><span class="hex-chip" style="background:#005986"></span>#005986</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; subtle</td>
+          <td class="ref-cell">Brand/Color/slate/100</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/100</td>
+          <td><span class="hex-chip" style="background:#F1F5F9"></span>#F1F5F9</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; muted</td>
+          <td class="ref-cell">Brand/Color/slate/300</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/300</td>
+          <td><span class="hex-chip" style="background:#CAD5E2"></span>#CAD5E2</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; default</td>
+          <td class="ref-cell">Brand/Color/slate/500</td>
+          <td><span class="hex-chip" style="background:#62748E"></span>#62748E</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/500</td>
+          <td><span class="hex-chip" style="background:#62748E"></span>#62748E</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; hover</td>
+          <td class="ref-cell">Brand/Color/slate/600</td>
+          <td><span class="hex-chip" style="background:#45556C"></span>#45556C</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/600</td>
+          <td><span class="hex-chip" style="background:#45556C"></span>#45556C</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; strong</td>
+          <td class="ref-cell">Brand/Color/slate/700</td>
+          <td><span class="hex-chip" style="background:#314158"></span>#314158</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/700</td>
+          <td><span class="hex-chip" style="background:#314158"></span>#314158</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; active</td>
+          <td class="ref-cell">Brand/Color/slate/800</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/800</td>
+          <td><span class="hex-chip" style="background:#1D293D"></span>#1D293D</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; extreme-light</td>
+          <td class="ref-cell">Brand/Color/slate/50</td>
+          <td><span class="hex-chip" style="background:#F8FAFC"></span>#F8FAFC</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/50</td>
+          <td><span class="hex-chip" style="background:#F8FAFC"></span>#F8FAFC</td><td>-</td><td class="status-info">INFO</td>
+        </tr><tr>
+          <td>Alias &gt; neutral &gt; extreme-dark</td>
+          <td class="ref-cell">Brand/Color/slate/950</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>-</td><td class="status-info">INFO</td>
+          <td class="ref-cell">Brand/Color/slate/950</td>
+          <td><span class="hex-chip" style="background:#020618"></span>#020618</td><td>-</td><td class="status-info">INFO</td>
+        </tr></tbody>
+    </table></div>

@@ -10,6 +10,7 @@ Each skill is a structured prompt that instructs Claude to perform a specific ta
 
 | Skill | Description |
 |---|---|
+| [color-scale-generator](./color-scale-generator/) | Generates a complete color token system for a design system, sourced from Tailwind CSS's official palettes, from a WCAG-tested HTML preview through real Figma variables and a specimen frame. |
 | [critical-thinking](./critical-thinking/) | Applies the FORCE anti-sycophancy framework to evaluate proposals, decisions, and artifacts. Surfaces real flaws, assigns severity, and delivers a clear verdict. |
 | [type-scale-generator](./type-scale-generator/) | Generates a brand-new typography type scale for a design system, from an HTML preview through real Figma variables, text styles, and a specimen frame. |
 
