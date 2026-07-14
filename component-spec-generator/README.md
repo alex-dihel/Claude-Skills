@@ -41,8 +41,10 @@ On invocation, the skill asks whether this is a new spec or an update to an exis
 
 ## Installation
 
-1. Download `SKILL.md` from this repository
-2. In Claude.ai: go to **Customize > Skills > Add Skill**, paste the contents of `SKILL.md`, save
+This skill depends on its `references/` and `assets/` files at runtime, not just `SKILL.md`, pasting `SKILL.md` alone will leave it missing files it needs while running.
+
+1. Download the whole skill as a package: the `.skill` file from this repository, or a clone of the `component-spec-generator` folder (containing `SKILL.md`, `references/`, and `assets/` together)
+2. In Claude.ai: go to **Customize > Skills > Add Skill**, upload the package
 3. In Claude Code: place the `component-spec-generator` folder in your skills directory, or install as a plugin
 
 ---
