@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Button — Component Spec Preview</title>
+<style>
+  :root {
+    --purple: #831dbf;
+    --purple-dark: #62168f;
+    --purple-light: #efe3f7;
+    --gray-text: #444955;
+    --gray-border: #737780;
+    --gray-fill: #d0d1d4;
+    --ink: #1c1d21;
+    --muted: #5b5f68;
+    --border: #e2e3e7;
+    --bg: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    margin: 0;
+    padding: 40px 24px 80px;
+    line-height: 1.55;
+  }
+  .doc {
+    max-width: 880px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 48px;
+  }
+  .meta {
+    font-size: 13px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+  .meta div { margin-bottom: 4px; }
+  .meta a { color: var(--purple); }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 4px;
+  }
+  h2 {
+    font-size: 18px;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--purple-light);
+    color: var(--purple-dark);
+  }
+  section:first-of-type h2 { margin-top: 0; }
+  p { margin: 0 0 8px; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: #f5f2f8;
+    font-weight: 600;
+    color: var(--purple-dark);
+  }
+  tr:nth-child(even) td { background: #fbfafc; }
+  .note {
+    font-size: 13px;
+    color: var(--muted);
+    background: #f5f2f8;
+    border-left: 3px solid var(--purple);
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 0 4px 4px 0;
+  }
+  .flag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: #fdf1e3;
+    color: #8a5a00;
+    border: 1px solid #f0d9ae;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-bottom: 8px;
+  }
+  .cols { display: flex; gap: 32px; flex-wrap: wrap; }
+  .cols > div { flex: 1; min-width: 240px; }
+  .cols h3 { font-size: 14px; margin: 0 0 8px; color: var(--ink); }
+  code {
+    background: #f0f0f2;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  .preview-strip {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: #fafafa;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+  }
+  .btn.primary { background: var(--purple); color: white; }
+  .btn.outline { background: transparent; border: 1px solid var(--purple); color: var(--purple); }
+  .btn.transparent { background: transparent; color: var(--purple); }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="meta">
+    <h1>Button</h1>
+    <div><strong>Source:</strong> <a href="https://www.figma.com/design/U8yqnCc4ty4N7ukmk1ZvOJ/Components---claude-test?node-id=2023-430" target="_blank">figma.com/.../Components---claude-test?node-id=2023-430</a></div>
+    <div><strong>Documented:</strong> 2026-07-11</div>
+    <div><strong>Scope:</strong> full component set (12 variants)</div>
+  </div>
+
+  <section>
+    <h2>Definition</h2>
+    <p>A clickable UI element that triggers an action or submits a form when activated.</p>
+  </section>
+
+  <section>
+    <h2>When to Use</h2>
+    <ul>
+      <li>Use <strong>primary</strong> type for the main call-to-action in a view or section</li>
+      <li>Use <strong>outline</strong> type for secondary actions alongside a primary button</li>
+      <li>Use <strong>transparent</strong> type for tertiary or low-emphasis actions</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>When Not to Use</h2>
+    <ul>
+      <li>Navigating between pages — use a Link instead</li>
+      <li>Toggling a setting on/off — use a Switch or Checkbox instead</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Variants</h2>
+    <div class="preview-strip">
+      <button class="btn primary">Submit</button>
+      <button class="btn outline">Submit</button>
+      <button class="btn transparent">Submit</button>
+    </div>
+    <table>
+      <tr><th>Property</th><th>Options</th></tr>
+      <tr><td>status</td><td>Default, hover, disabled, focus</td></tr>
+      <tr><td>type</td><td>primary, transparent, outline</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>States</h2>
+    <table>
+      <tr><th>State</th><th>Trigger</th><th>Visual Change</th></tr>
+      <tr><td>Default</td><td>resting</td><td>Base fill/border/text per type</td></tr>
+      <tr><td>hover</td><td>pointer over</td><td>Fill/background shifts to hover token; outline type gains hover border color</td></tr>
+      <tr><td>focus</td><td>keyboard focus</td><td>2px focus ring added around the button (offset -2px), layered on top of base type styling</td></tr>
+      <tr><td>disabled</td><td>disabled status selected</td><td>Fill/border becomes disabled gray, text becomes on-disabled color, no pointer events</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Anatomy</h2>
+    <table>
+      <tr><th>Part</th><th>Description</th></tr>
+      <tr><td>Container</td><td>Auto-layout row: horizontal padding, gap, rounded corners, background/border per type + status</td></tr>
+      <tr><td>Icon (left)</td><td>Nested Icon component instance, shown before the label, swappable and hideable</td></tr>
+      <tr><td>Label</td><td>Text node showing the button's label, body/md-semibold style</td></tr>
+      <tr><td>Icon (right)</td><td>Nested Icon component instance, shown after the label, swappable and hideable</td></tr>
+      <tr><td>Focus ring</td><td>Border overlay shown only when status = focus</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Properties</h2>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Options / Range</th><th>Default</th><th>Linked Variant</th></tr>
+      <tr><td>status</td><td>Variant</td><td>Default, hover, disabled, focus</td><td>Default</td><td>Same as Variants: status</td></tr>
+      <tr><td>type</td><td>Variant</td><td>primary, transparent, outline</td><td>primary</td><td>Same as Variants: type</td></tr>
+      <tr><td>label</td><td>Text</td><td>any string</td><td>"Submit"</td><td>—</td></tr>
+      <tr><td>iconLeft</td><td>Boolean</td><td>true, false</td><td>true</td><td>—</td></tr>
+      <tr><td>iconLeft</td><td>Instance-swap</td><td>any Icon component</td><td>keyboard_arrow_right</td><td>—</td></tr>
+      <tr><td>iconRight</td><td>Boolean</td><td>true, false</td><td>true</td><td>—</td></tr>
+      <tr><td>iconRight</td><td>Instance-swap</td><td>any Icon component</td><td>add_box</td><td>—</td></tr>
+    </table>
+    <div class="note"><strong>Note:</strong> <code>iconLeft</code> and <code>iconRight</code> each exist as two distinct Figma properties sharing the same display name — one Boolean (toggles icon visibility) and one Instance-swap (chooses which Icon component renders). This is a naming coincidence in the source file, not a duplicate row.</div>
+  </section>
+
+  <section>
+    <h2>Usage Rules</h2>
+    <div class="cols">
+      <div>
+        <h3>Do</h3>
+        <ul>
+          <li>Use one primary-type button per view/section to establish clear hierarchy</li>
+          <li>Keep labels short and action-oriented, verb-first (e.g. "Submit", "Continue")</li>
+          <li>Use the disabled status only when the action is genuinely unavailable, not as a substitute for validation messaging</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Don't</h3>
+        <ul>
+          <li>Don't stack multiple primary-type buttons together</li>
+          <li>Don't use a button when a link is more appropriate (i.e. simple navigation)</li>
+          <li>Don't rely on color alone to convey the disabled status</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Accessibility Notes</h2>
+    <span class="flag">Unverified — design intent only</span>
+    <p><strong>Keyboard:</strong> Focusable via Tab, activated with Enter/Space.</p>
+    <p><strong>Screen reader:</strong> Disabled buttons are removed from the tab order and announced as disabled. Icon-only or icon+label buttons expose an accessible name via the label text; if icon-only, requires an explicit aria-label.</p>
+    <p><strong>Other:</strong> Focus state is shown via a visible focus ring (matches the "focus" status variant). Color contrast for text/icon against each button surface should meet WCAG AA.</p>
+  </section>
+
+  <section>
+    <h2>Related Atom Components</h2>
+    <ul>
+      <li><strong>Icon:</strong> nested component instance used for the left and right icon slots, swappable via the iconLeft/iconRight instance-swap properties (Material Symbols-style icons, e.g. <code>keyboard_arrow_right</code>, <code>add_box</code>)</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>
