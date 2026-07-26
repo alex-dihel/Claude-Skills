@@ -14,6 +14,7 @@ Each skill is a structured prompt that instructs Claude to perform a specific ta
 | [color-scale-generator](./color-scale-generator/) | Generates a complete color token system for a design system, sourced from Tailwind CSS's official palettes, from a WCAG-tested HTML preview through real Figma variables and a specimen frame. |
 | [component-spec-generator](./component-spec-generator/) | Documents an existing Figma component, reading its variants, states, and properties directly from Figma, filling in the rest through a short interview, previewing it as a styled HTML document, then writing it into Figma as a documentation frame beside the component. |
 | [critical-thinking](./critical-thinking/) | Applies the FORCE anti-sycophancy framework to evaluate proposals, decisions, and artifacts. Surfaces real flaws, assigns severity, and delivers a clear verdict. |
+| [developer-handoff-spec-generator](./developer-handoff-spec-generator/) | Documents an existing Figma component, component set, or composed frame for developers, sizing, states, behavior, accessibility, responsive rules, edge cases, and composition, read from real Figma data and written to Figma as a documentation frame beside the target. |
 | [type-scale-generator](./type-scale-generator/) | Generates a brand-new typography type scale for a design system, from an HTML preview through real Figma variables, text styles, and a specimen frame. |
 
 ---

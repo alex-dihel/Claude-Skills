@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Developer Handoff Style Reference</title>
+<style>
+  :root {
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --muted-bg: #fafafa;
+    --muted-fg: #71717a;
+    --foreground: #18181b;
+    --body: #3f3f46;
+    --radius: 8px;
+    --accent-blue-bg: #eff6ff;
+    --accent-blue-fg: #1d4ed8;
+    --accent-blue-border: #bfdbfe;
+    --accent-green: #16a34a;
+    --accent-red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: #f4f4f5;
+    margin: 0;
+    padding: 40px;
+    color: var(--body);
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .meta { padding-bottom: 20px; }
+  .meta h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0 0 6px 0;
+  }
+  .meta p {
+    font-size: 13px;
+    color: var(--muted-fg);
+    margin: 2px 0;
+  }
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+  .section { margin-bottom: 4px; }
+  .section h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--foreground);
+    margin: 0 0 12px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--muted-bg);
+    color: var(--muted-fg);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    color: var(--body);
+    vertical-align: top;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 6px;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+  .badge-outline {
+    border: 1px solid var(--border-strong);
+    color: var(--muted-fg);
+    background: transparent;
+  }
+  .badge-updated {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue-fg);
+    border: 1px solid var(--accent-blue-border);
+  }
+  .icon-check { color: var(--accent-green); font-weight: 700; }
+  .icon-x { color: var(--accent-red); font-weight: 700; }
+  .note {
+    border: 1px solid var(--border);
+    background: var(--muted-bg);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--body);
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+  p.body-text { font-size: 13px; margin: 4px 0; }
+  code.inline {
+    background: var(--muted-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="meta">
+    <h1>[Target Name]</h1>
+    <p>Type: [Component / Component Set / Composed Frame]</p>
+    <p>Source: [Figma link]</p>
+    <p>Documented: [ISO date]</p>
+  </div>
+  <hr class="divider">
+
+  <div class="section">
+    <h2>Parts</h2>
+    <table>
+      <thead>
+        <tr><th style="width:22%">Instance</th><th style="width:22%">Built from</th><th style="width:16%">Present in</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>logo-row</td><td>nt-logo</td><td>open only</td></tr>
+        <tr><td>menu_open icon</td><td>menu_open</td><td>closed only</td></tr>
+        <tr><td>Brand Select</td><td>Brand-select</td><td>both</td></tr>
+      </tbody>
+    </table>
+    <p class="body-text" style="font-size:12px;color:var(--muted-fg)">Instance = current name in this file. Built from = the original component it's an instance of. No usage description here, that lives in the referenced component's own documentation.</p>
+  </div>
+  <hr class="divider">
+
+  <div class="section">
+    <h2>Sizing</h2>
+    <table>
+      <thead>
+        <tr><th style="width:20%">Property</th><th style="width:15%">Open</th><th style="width:15%">Closed</th><th>Token</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Width</td><td>280px</td><td>64px</td>
+          <td><span class="icon-x">✗</span> no token bound <span class="badge badge-outline">Figma property</span></td>
+        </tr>
+        <tr>
+          <td>Right border</td><td>1px solid</td><td>1px solid</td>
+          <td><span class="icon-check">✓</span> <code class="inline">border/primary</code> <span class="badge badge-outline">Variable</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr class="divider">
+
+  <div class="section">
+    <h2>Accessibility</h2>
+    <p class="body-text"><strong>Landmark:</strong> role nav, accessible name "Primary navigation"</p>
+    <table>
+      <thead>
+        <tr><th style="width:30%">Element</th><th style="width:15%">Required</th><th>Accessible name</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Email input</td><td><span class="icon-check">✓</span></td><td>"Email address" <span class="badge badge-outline">(Default)</span></td></tr>
+        <tr><td>Optional referral code</td><td><span class="icon-x">✗</span></td><td>"Referral code (optional)"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <hr class="divider">
+
+  <div class="section">
+    <h2>Composition <span class="badge badge-updated">UPDATED</span></h2>
+    <p class="body-text">Single Component Set, boolean variant <code class="inline">status</code>. Parts above are exhaustive, no separate re-listing here.</p>
+  </div>
+
+  <hr class="divider">
+  <div class="note">
+    Note callouts use this plain bordered box, no colored accent bar. Reserved for disclosures: sourcing gaps, defaulted values, classification rules.
+  </div>
+
+</div>
+</body>
+</html>
