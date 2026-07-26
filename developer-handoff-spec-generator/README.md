@@ -37,9 +37,15 @@ It's scoped to a single documentable unit. Multi-screen flows, cross-page naviga
 
 ## Installation
 
-1. Download the skill files from this repository (`SKILL.md`, `references/`, `assets/`)
-2. In Claude.ai: **Customize > Skills > "+" > "+ Create skill"**, upload as a ZIP with the folder structure intact
-3. In Claude Code or Cowork: place the `developer-handoff-spec-generator` folder in your skills directory, or install as a plugin
+This skill depends on its `references/` and `assets/` files at runtime, not just `SKILL.md`, pasting `SKILL.md` alone will leave it missing files it needs while running.
+
+**For Claude.ai:**
+1. Open [`developer-handoff-spec-generator.skill`](./developer-handoff-spec-generator.skill) in this folder on GitHub, then click **Download raw file**
+2. Go to **Customize > Skills > Add Skill**, and upload the downloaded `.skill` file
+
+**For Claude Code:**
+1. Clone this repository (or download the `developer-handoff-spec-generator` folder, containing `SKILL.md`, `references/`, and `assets/`)
+2. Place the `developer-handoff-spec-generator` folder in your skills directory, or install as a plugin
 
 ---
 
