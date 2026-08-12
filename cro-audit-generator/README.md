@@ -36,7 +36,9 @@ It does not pull data from Google Analytics, Microsoft Clarity, or any other ana
 
 ## Installation
 
-**1. Install the skill.** Download [`cro-audit-generator.skill`](./cro-audit-generator.skill), unzip it, and place the `cro-audit-generator/` folder (containing `SKILL.md` and `references/`) into your Claude Code skills directory:
+**1. Install the skill.** Download [`cro-audit-generator.skill`](./cro-audit-generator.skill), then in Claude (web or desktop app), go to **Customize > Skills > Add > Upload a skill** and upload the file.
+
+Alternatively, for Claude Code without the app: unzip `cro-audit-generator.skill` and place the `cro-audit-generator/` folder (containing `SKILL.md` and `references/`) into your Claude Code skills directory:
 
 ```
 ~/.claude/skills/cro-audit-generator/        # personal, available in every project
@@ -67,7 +69,7 @@ The skill triggers two ways:
 
 **Directly**, by naming it, useful if the automatic match doesn't fire or you want to be explicit:
 
-> Use the cro-audit-generator skill on tesbags.co.il's homepage.
+> Use the cro-audit-generator skill on [website/page url]'s homepage.
 
 Either way, the skill runs its own setup interview in small batches, waits for your answers, verifies the live target before auditing it, and saves the final report as an HTML file with the audit date in the filename, so multiple runs sort chronologically.
 
