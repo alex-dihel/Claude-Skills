@@ -16,6 +16,7 @@ Each skill is a structured prompt that instructs Claude to perform a specific ta
 | [cro-audit-generator](./cro-audit-generator/) | Runs a conversion rate optimization (CRO) audit on a single page or a multi-step flow, scoring six persuasion elements against the site's actual business model, and producing a prioritized, PIE-scored HTML report grounded in cited benchmarks. |
 | [developer-handoff-spec-generator](./developer-handoff-spec-generator/) | Documents an existing Figma component, component set, or composed frame for developers, sizing, states, behavior, accessibility, responsive rules, edge cases, and composition, read from real Figma data and written to Figma as a documentation frame beside the target. |
 | [lean](./lean/) | Switches Claude into a tighter writing mode on command, cutting filler and padding while keeping full technical accuracy, shaped by clarity rules adapted from ASD-STE100 (Simplified Technical English). |
+| [self-audit](./self-audit/) | Runs a structured audit on a document, file, or artifact Claude just created or edited, checking for missed requirements, internal contradictions, misused creation process, and critical functional issues, cross-checked against the project's own instructions and existing sibling documents when present. |
 | [type-scale-generator](./type-scale-generator/) | Generates a brand-new typography type scale for a design system, from an HTML preview through real Figma variables, text styles, and a specimen frame. |
 
 ---
